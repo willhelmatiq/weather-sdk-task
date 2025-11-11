@@ -2,7 +2,6 @@ package com.kameleoon.weather;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -10,8 +9,9 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  * Thread-safe in-memory cache for weather data.
  * - Stores up to MAX_SIZE cities.
  * - Each entry expires after TTL_SECONDS.
- * - Automatically removes expired entries on access.
- * - Evicts the oldest city (FIFO) when limit exceeded.
+ * - Implements an LRU (Least Recently Used) eviction policy:
+ * - Internally uses {@link ConcurrentHashMap} for thread-safe storage
+ * and {@link ConcurrentLinkedDeque} to maintain access order.
  */
 public class WeatherCache {
 
@@ -21,7 +21,6 @@ public class WeatherCache {
     private static class CacheEntry {
         final WeatherData data;
         final Instant timestamp;
-
         CacheEntry(WeatherData data) {
             this.data = data;
             this.timestamp = Instant.now();
@@ -31,9 +30,8 @@ public class WeatherCache {
             return Duration.between(timestamp, Instant.now()).toSeconds() > TTL_SECONDS;
         }
     }
-
     private final ConcurrentHashMap<String, CacheEntry> cache = new ConcurrentHashMap<>();
-    private final ConcurrentLinkedDeque<String> order = new ConcurrentLinkedDeque<>();
+    private final ConcurrentLinkedDeque<String> accessOrder = new ConcurrentLinkedDeque<>();
 
     /**
      * Adds or updates a city in cache.
@@ -44,15 +42,11 @@ public class WeatherCache {
             return;
         }
         String key = city.toLowerCase();
-
-        if (!cache.containsKey(key)) {
-            order.addLast(key);
-        }
-
         cache.put(key, new CacheEntry(data));
+        updateAccessOrder(key);
 
         while (cache.size() > MAX_SIZE) {
-            String oldest = order.pollFirst();
+            String oldest = accessOrder.pollFirst();
             if (oldest != null) {
                 cache.remove(oldest);
             }
@@ -60,25 +54,25 @@ public class WeatherCache {
     }
 
     /**
-     * Retrieves cached data if present and not expired.
-     * If expired — removes it automatically.
+     * Retrieves cached weather data for the specified city.
+     * - If the entry is present and not expired, it is returned and marked as recently used
+     *   (moved to the end of the LRU access order).
+     * - If the entry has expired, it is removed and {@code null} is returned.
+     * - If the entry is not found, {@code null} is also returned.
      */
     public WeatherData get(String city) {
         if (city == null || city.isBlank()) {
             return null;
         }
         String key = city.toLowerCase();
-
         CacheEntry entry = cache.get(key);
-        if (entry == null) {
-            return null;
-        }
 
-        if (entry.isExpired()) {
-            cache.remove(key, entry);
-            order.remove(key);
+        if (entry == null || entry.isExpired()) {
+            cache.remove(key);
+            accessOrder.remove(key);
             return null;
         }
+        updateAccessOrder(key);
 
         return entry.data;
     }
@@ -91,29 +85,12 @@ public class WeatherCache {
     }
 
     /**
-     * Clears the entire cache.
+     * Updates LRU access order for the given key.
      */
-    public void clear() {
-        cache.clear();
-        order.clear();
-    }
-
-    /**
-     * Returns the number of entries in cache.
-     */
-    public int size() {
-        return cache.size();
-    }
-
-    /**
-     * Removes expired entries in the background (optional manual cleanup).
-     */
-    public void cleanup() {
-        for (Map.Entry<String, CacheEntry> e : cache.entrySet()) {
-            if (e.getValue().isExpired()) {
-                cache.remove(e.getKey(), e.getValue());
-                order.remove(e.getKey());
-            }
+    private void updateAccessOrder(String key) {
+        synchronized (accessOrder) {
+            accessOrder.remove(key);
+            accessOrder.addLast(key);
         }
     }
 }
