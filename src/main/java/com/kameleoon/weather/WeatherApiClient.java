@@ -1,20 +1,16 @@
 package com.kameleoon.weather;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.time.Duration;
 
 /**
  * Main entry point of the SDK.
  * Provides methods to query weather data from OpenWeatherMap API.
  */
 public class WeatherApiClient {
-    private final String apiKey;
-    private final WeatherMode mode;
-    private final HttpClient httpClient;
+//    private final WeatherMode mode;
+    private final WeatherFetcher fetcher;
     private final WeatherCache cache;
+    private PollingService pollingService;
 
     /**
      * Creates a new instance of the API client.
@@ -23,12 +19,13 @@ public class WeatherApiClient {
      * @param mode   SDK mode (ON_DEMAND or POLLING)
      */
     public WeatherApiClient(String apiKey, WeatherMode mode) {
-        this.apiKey = apiKey;
-        this.mode = mode;
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(WeatherAPIConstants.DEFAULT_TIMEOUT)
-                .build();
         this.cache = new WeatherCache();
+        this.fetcher = new WeatherFetcher(apiKey);
+
+        if (mode == WeatherMode.POLLING) {
+            this.pollingService = new PollingService(cache, fetcher, Duration.ofMinutes(2));
+            this.pollingService.start();
+        }
     }
 
     /**
@@ -44,38 +41,22 @@ public class WeatherApiClient {
             return cached;
         }
 
-        WeatherData freshData = fetchWeatherFromAPI(cityName);
-        cache.put(cityName, freshData);
-        return freshData;
-    }
-
-    /**
-     * Performs a direct HTTP call to OpenWeatherMap API.
-     *
-     * @param cityName name of the city
-     * @return parsed WeatherData object
-     */
-    private WeatherData fetchWeatherFromAPI(String cityName) {
         try {
-            String endpoint = String.format(
-                    "%s?q=%s&appid=%s&units=metric",
-                    WeatherAPIConstants.BASE_URL,
-                    cityName,
-                    apiKey
-            );
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(endpoint))
-                    .timeout(WeatherAPIConstants.DEFAULT_TIMEOUT)
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            return WeatherData.fromJson(response.body());
-
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Failed to fetch weather data: " + e.getMessage(), e);
+            WeatherData fresh = fetcher.fetchWeatherFromAPI(cityName);
+            cache.put(cityName, fresh);
+            return fresh;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch weather data for " + cityName, e);
         }
     }
 
+
+    /**
+     * Shuts down background services (if any).
+     */
+    public void shutdown() {
+        if (pollingService != null) {
+            pollingService.stop();
+        }
+    }
 }
