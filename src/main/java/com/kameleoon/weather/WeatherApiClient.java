@@ -10,6 +10,7 @@ import java.time.Duration;
 /**
  * Main entry point of the SDK.
  * Provides methods to query weather data from OpenWeatherMap API.
+ * Instances of this class should be obtained via {@link WeatherClientRegistry}.
  */
 public class WeatherApiClient {
     private final WeatherFetcher fetcher;
@@ -22,7 +23,7 @@ public class WeatherApiClient {
      * @param apiKey OpenWeather API key
      * @param mode   SDK mode (ON_DEMAND or POLLING)
      */
-    public WeatherApiClient(String apiKey, WeatherMode mode) {
+    WeatherApiClient(String apiKey, WeatherMode mode) {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalArgumentException("apiKey must not be blank");
         }
