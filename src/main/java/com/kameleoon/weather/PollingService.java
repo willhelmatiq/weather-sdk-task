@@ -1,5 +1,7 @@
 package com.kameleoon.weather;
 
+import com.kameleoon.weather.cache.WeatherCache;
+
 import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
