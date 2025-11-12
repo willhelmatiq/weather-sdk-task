@@ -19,6 +19,12 @@ public class WeatherApiClient {
      * @param mode   SDK mode (ON_DEMAND or POLLING)
      */
     public WeatherApiClient(String apiKey, WeatherMode mode) {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalArgumentException("apiKey must not be blank");
+        }
+        if (mode == null) {
+            throw new IllegalArgumentException("mode must not be null");
+        }
         this.cache = new WeatherCache();
         this.fetcher = new WeatherFetcher(apiKey);
 
