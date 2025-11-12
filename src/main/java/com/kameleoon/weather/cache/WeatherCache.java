@@ -9,20 +9,24 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Thread-safe in-memory cache for weather data.
- * - Stores up to MAX_SIZE cities.
- * - Each entry expires after TTL_SECONDS.
+ * Configurable size and TTL via {@link com.kameleoon.weather.WeatherConfig}.
  * - Implements an LRU (Least Recently Used) eviction policy:
  * - Internally uses {@link ConcurrentHashMap} for thread-safe storage
  * and {@link ConcurrentLinkedDeque} to maintain access order.
  */
 public class WeatherCache {
 
-    private static final int MAX_SIZE = 10;
-    private static final long TTL_SECONDS = 600;
+    private final int maxSize;
+    private final long ttlSeconds;
 
     private final ConcurrentHashMap<String, DoublyLinkedList.Node<String, WeatherData>> map = new ConcurrentHashMap<>();
     private final DoublyLinkedList<String, WeatherData> list = new DoublyLinkedList<>();
     private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+
+    public WeatherCache(int maxSize, long ttlSeconds) {
+        this.maxSize = maxSize;
+        this.ttlSeconds = ttlSeconds;
+    }
 
     /**
      * Adds or updates a city in cache.
@@ -47,7 +51,7 @@ public class WeatherCache {
                 map.put(key, newNode);
             }
 
-            while (map.size() > MAX_SIZE) {
+            while (map.size() > maxSize) {
                 var lru = list.first();
                 if (lru == null) {
                     break;
@@ -87,7 +91,7 @@ public class WeatherCache {
         try {
             node = map.get(key);
 
-            if (Instant.now().getEpochSecond() - node.timestampSec > TTL_SECONDS) {
+            if (Instant.now().getEpochSecond() - node.timestampSec > ttlSeconds) {
                 list.unlink(node);
                 map.remove(key);
                 return null;

@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 
 /**
  * HTTP component responsible for retrieving weather data
@@ -17,11 +18,13 @@ import java.net.http.HttpResponse;
 public class WeatherFetcher {
     private final String apiKey;
     private final HttpClient httpClient;
+    private final Duration apiTimeout;
 
-    public WeatherFetcher(String apiKey) {
+    public WeatherFetcher(String apiKey, Duration apiTimeout) {
         this.apiKey = apiKey;
+        this.apiTimeout = apiTimeout;
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(WeatherAPIConstants.DEFAULT_TIMEOUT)
+                .connectTimeout(this.apiTimeout)
                 .build();
     }
 
@@ -44,7 +47,7 @@ public class WeatherFetcher {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(endpoint))
-                    .timeout(WeatherAPIConstants.DEFAULT_TIMEOUT)
+                    .timeout(this.apiTimeout)
                     .GET()
                     .build();
 

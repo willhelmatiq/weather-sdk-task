@@ -23,15 +23,15 @@ public class WeatherApiClient {
      * @param apiKey OpenWeather API key
      * @param mode   SDK mode (ON_DEMAND or POLLING)
      */
-    WeatherApiClient(String apiKey, WeatherMode mode) {
+    WeatherApiClient(String apiKey, WeatherMode mode, WeatherConfig config) {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalArgumentException("apiKey must not be blank");
         }
         if (mode == null) {
             throw new IllegalArgumentException("mode must not be null");
         }
-        this.cache = new WeatherCache();
-        this.fetcher = new WeatherFetcher(apiKey);
+        this.cache = new WeatherCache(config.getCacheSize(), config.getCacheTtlSeconds());
+        this.fetcher = new WeatherFetcher(apiKey, config.getApiTimeout());
 
         if (mode == WeatherMode.POLLING) {
             this.pollingService = new PollingService(cache, fetcher, Duration.ofMinutes(2));
