@@ -1,6 +1,7 @@
 package com.kameleoon.weather;
 
 import com.kameleoon.weather.cache.WeatherCache;
+import com.kameleoon.weather.exception.WeatherPollingException;
 
 import java.time.Duration;
 import java.util.concurrent.Executors;
@@ -50,7 +51,8 @@ public class PollingService {
                 WeatherData data = fetcher.fetchWeatherFromAPI(city);
                 cache.put(city, data);
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "[PollingService] Failed to refresh " + city, e);
+                WeatherPollingException pollingError = new WeatherPollingException("Polling failed for city: " + city, e);
+                LOGGER.log(Level.WARNING, "[PollingService] " + pollingError.getMessage(), pollingError);
             }
         }
     }
