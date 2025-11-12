@@ -1,5 +1,7 @@
-package com.kameleoon.weather;
+package com.kameleoon.weather.polling;
 
+import com.kameleoon.weather.api.WeatherData;
+import com.kameleoon.weather.api.WeatherFetcher;
 import com.kameleoon.weather.cache.WeatherCache;
 import com.kameleoon.weather.exception.WeatherPollingException;
 
@@ -18,8 +20,8 @@ import java.util.logging.Logger;
  */
 public class PollingService {
 
-    private static final Logger LOGGER = Logger.getLogger(PollingService.class.getName());
     private static final long SHUTDOWN_TIMEOUT_SECONDS = 5;
+    private final Logger logger = Logger.getLogger(PollingService.class.getName());
 
     private final WeatherCache cache;
     private final WeatherFetcher fetcher;
@@ -27,7 +29,7 @@ public class PollingService {
     private final Duration interval;
     private volatile boolean started = false;
 
-    public PollingService(WeatherCache cache, WeatherFetcher fetcher, Duration interval) {
+    public PollingService(WeatherCache cache, WeatherFetcher fetcher, Duration interval, Level logLevel) {
         this.cache = cache;
         this.fetcher = fetcher;
         this.interval = interval;
@@ -36,6 +38,7 @@ public class PollingService {
             thread.setDaemon(true);
             return thread;
         });
+        this.logger.setLevel(logLevel);
     }
 
     /** Starts periodic background refresh of cached weather data. */
@@ -52,7 +55,7 @@ public class PollingService {
                 cache.put(city, data);
             } catch (Exception e) {
                 WeatherPollingException pollingError = new WeatherPollingException("Polling failed for city: " + city, e);
-                LOGGER.log(Level.WARNING, "[PollingService] " + pollingError.getMessage(), pollingError);
+                logger.log(Level.WARNING, "[PollingService] " + pollingError.getMessage(), pollingError);
             }
         }
     }

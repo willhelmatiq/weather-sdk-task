@@ -1,6 +1,6 @@
 package com.kameleoon.weather.cache;
 
-import com.kameleoon.weather.WeatherData;
+import com.kameleoon.weather.api.WeatherData;
 
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;

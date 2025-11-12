@@ -1,4 +1,4 @@
-package com.kameleoon.weather;
+package com.kameleoon.weather.api;
 
 /**
  * Central place for API-related constants.

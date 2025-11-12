@@ -1,11 +1,12 @@
 package com.kameleoon.weather;
 
+import com.kameleoon.weather.api.WeatherData;
+import com.kameleoon.weather.api.WeatherFetcher;
 import com.kameleoon.weather.cache.WeatherCache;
 import com.kameleoon.weather.exception.WeatherAPIException;
 import com.kameleoon.weather.exception.WeatherParsingException;
 import com.kameleoon.weather.exception.WeatherSdkException;
-
-import java.time.Duration;
+import com.kameleoon.weather.polling.PollingService;
 
 /**
  * Main entry point of the SDK.
@@ -34,7 +35,7 @@ public class WeatherApiClient {
         this.fetcher = new WeatherFetcher(apiKey, config.getApiTimeout());
 
         if (mode == WeatherMode.POLLING) {
-            this.pollingService = new PollingService(cache, fetcher, Duration.ofMinutes(2));
+            this.pollingService = new PollingService(cache, fetcher, config.getPollingInterval(), config.getLogLevel());
             this.pollingService.start();
         } else {
             this.pollingService = null;

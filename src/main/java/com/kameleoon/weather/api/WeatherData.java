@@ -1,4 +1,4 @@
-package com.kameleoon.weather;
+package com.kameleoon.weather.api;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;

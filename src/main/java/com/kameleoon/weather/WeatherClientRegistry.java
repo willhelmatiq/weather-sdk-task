@@ -33,9 +33,9 @@ public final class WeatherClientRegistry {
      * Returns an existing client for the given API key or creates a new one with default configuration.
      * Prevents creation of duplicate clients with the same API key.
      *
-     * @param apiKey  OpenWeather API key
-     * @param mode    SDK mode (ON_DEMAND or POLLING)
-     * @param config  Custom SDK configuration
+     * @param apiKey OpenWeather API key
+     * @param mode   SDK mode (ON_DEMAND or POLLING)
+     * @param config Custom SDK configuration
      * @return WeatherApiClient instance
      */
     public static WeatherApiClient getClient(String apiKey, WeatherMode mode, WeatherConfig config) {
