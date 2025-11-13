@@ -71,6 +71,28 @@ public class Main {
     }
 }
 ```
+```java
+import com.kameleoon.weather.*;
+
+public class Main {
+  public static void main(String[] args) {
+    String apiKey = "YOUR_API_KEY";
+    
+    WeatherApiClient client =
+            WeatherClientRegistry.getClient(apiKey, WeatherMode.POLLING);
+
+    try {
+      WeatherData data = client.getWeather("London");
+      System.out.println(data.toJson());
+    } catch (WeatherSdkException e) {
+      e.printStackTrace();
+    } finally {
+      client.shutdown();
+      WeatherClientRegistry.removeClient(apiKey);
+    }
+  }
+}
+```
 ---
 ## Configuration
 
